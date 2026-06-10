@@ -4,12 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EPS Sanitas Inteligente - Consulta de Medicamentos</title>
-    <!-- Google Fonts para tipografía moderna -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <!-- Estilos externos -->
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -17,7 +15,6 @@
 <div class="container">
     <div class="header">
         <div class="logo-area">
-            <!-- Icono de escudo médico moderno -->
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.745 3.745 0 011.043 3.296A3.745 3.745 0 0121 12z" />
             </svg>
@@ -51,8 +48,6 @@
     <div id="statusBox" class="status-box"></div>
 </div>
 
-<!-- Importamos la configuración -->
-<script src="config.js"></script>
 <script>
     document.getElementById('webhookForm').addEventListener('submit', async function(e) {
         e.preventDefault();
@@ -60,30 +55,28 @@
         const submitBtn = document.getElementById('submitBtn');
         const statusBox = document.getElementById('statusBox');
         
-        const cedula = document.getElementById('cedula').value;
-        const ubicacion = document.getElementById('ubicacion').value;
-        const medicamento = document.getElementById('medicamento').value;
+        const cedula = document.getElementById('cedula').value.trim();
+        const ubicacion = document.getElementById('ubicacion').value.trim();
+        const medicamento = document.getElementById('medicamento').value.trim();
         
         // Estado de carga inicial
         submitBtn.disabled = true;
         statusBox.className = 'status-box loading';
-        statusBox.innerHTML = '<span class="spinner"></span> Procesando con el pipeline de n8n...';
+        statusBox.innerHTML = '<span class="spinner"></span> El Agente Inteligente está evaluando su caso...';
         
-        // Payload estructurado para el trigger de n8n
+        // CONCATENACIÓN INTELEGIBLE PARA EL AGENTE DE LANGCHAIN:
+        // Empaquetamos todo en una sola instrucción estructurada en lenguaje natural
+        const mensajeEstructurado = `Hola, mi cédula es ${cedula}. Me encuentro en la ubicación: ${ubicacion}. Solicitud médica: ${medicamento}`;
+        
         const payload = {
-            cedula: cedula.trim(),
-            ubicacion: ubicacion.trim(),
-            mensaje_usuario: medicamento.trim(),
-            timestamp: new Date().toISOString()
+            mensaje: mensajeEstructurado
         };
         
         try {
-            // Verificación previa de la URL
-            if (!CONFIG || CONFIG.N8N_WEBHOOK_URL.includes('tu-ruta-aqui')) {
-                throw new Error('Por favor, edita el archivo config.js y agrega una URL válida de Webhook generada por n8n.');
-            }
+            // Apuntamos directamente a tu servidor Express local en el puerto 3000
+            const URL_BACKEND = "http://localhost:3000/api/chat";
 
-            const response = await fetch(CONFIG.N8N_WEBHOOK_URL, {
+            const response = await fetch(URL_BACKEND, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -101,7 +94,7 @@
                 // Inyectar el HTML limpio en la caja de estado
                 statusBox.innerHTML = `
                     <div style="border-bottom: 1px solid #c8e6c9; padding-bottom: 10px; margin-bottom: 15px;">
-                        <strong>✓ Respuesta de la EPS</strong>
+                        <strong>✓ Respuesta del Agente de Enrutamiento</strong>
                     </div>
                     <div class="ia-response">
                         ${respuestaFormato}
@@ -113,7 +106,7 @@
             
         } catch (error) {
             statusBox.className = 'status-box error';
-            statusBox.innerHTML = `<strong>Error en la conexión:</strong> ${error.message}`;
+            statusBox.innerHTML = `<strong>Error en la conexión con el servidor IA:</strong> ${error.message}`;
         } finally {
             submitBtn.disabled = false;
         }

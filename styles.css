@@ -1,0 +1,250 @@
+:root {
+    --primary: #0284c7;
+    --primary-hover: #0369a1;
+    --background: #f8fafc;
+    --surface: #ffffff;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --border: #e2e8f0;
+    --success: #10b981;
+    --error: #ef4444;
+    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+    --radius: 12px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+body {
+    background-color: var(--background);
+    color: var(--text-main);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    width: 100%;
+    max-width: 550px;
+    background: var(--surface);
+    padding: 40px;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+
+.logo-area {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background-color: #e0f2fe;
+    border-radius: 50%;
+    color: var(--primary);
+    margin-bottom: 16px;
+}
+
+.logo-area svg {
+    width: 24px;
+    height: 24px;
+}
+
+h1 {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 8px;
+}
+
+p.subtitle {
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text-main);
+}
+
+input[type="text"],
+textarea {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    background-color: #f8fafc;
+    color: var(--text-main);
+    transition: all 0.2s ease;
+}
+
+input[type="text"]:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--primary);
+    background-color: var(--surface);
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+}
+
+textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.hint {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    margin-top: 10px;
+}
+
+button:hover {
+    background-color: var(--primary-hover);
+}
+
+button:disabled {
+    background-color: var(--text-muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* =========================================
+   BLOQUE DE ESTADO / FEEDBACK
+   ========================================= */
+
+.status-box {
+    margin-top: 24px;
+    padding: 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    display: none;
+    line-height: 1.6;
+}
+
+.status-box.loading {
+    display: block;
+    background-color: #f1f5f9;
+    color: #475569;
+    border-left: 4px solid #94a3b8;
+    text-align: center;
+}
+
+.status-box.error {
+    display: block;
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fee2e2;
+    border-left: 4px solid var(--error);
+}
+
+.status-box.error strong {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 8px;
+    color: #7f1d1d;
+}
+
+.status-box.success {
+    display: block;
+    background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+    color: #065f46;
+    border: 1px solid #d1fae5;
+    border-left: 4px solid var(--success);
+}
+
+/* =========================================
+   ESTILOS PARA EL RENDERIZADO DE LA IA (Markdown)
+   ========================================= */
+
+/* Título superior de la caja de éxito */
+.status-title {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: #047857;
+    border-bottom: 2px solid #d1fae5;
+    padding-bottom: 12px;
+    font-weight: 700;
+}
+
+/* Contenedor del texto de la IA */
+.ia-response {
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.ia-response p {
+    margin-bottom: 12px;
+}
+
+.ia-response p:last-child {
+    margin-bottom: 0;
+}
+
+/* Las negritas se mantienen en línea, sin romper el texto */
+.ia-response strong, 
+.ia-response b {
+    font-weight: 700;
+    color: #047857;
+}
+
+/* Listas (Sedes, instrucciones, etc.) */
+.ia-response ul, 
+.ia-response ol {
+    margin-top: 8px;
+    margin-bottom: 16px;
+    margin-left: 24px;
+}
+
+.ia-response li {
+    margin-bottom: 6px;
+}
+
+/* SPINNER DE CARGA */
+.spinner {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(0,0,0,0.1);
+    border-top-color: #475569;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-right: 8px;
+    vertical-align: middle;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}

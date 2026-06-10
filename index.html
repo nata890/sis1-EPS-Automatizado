@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPS Sanitas Inteligente - Consulta de Medicamentos</title>
+    <!-- Google Fonts para tipografía moderna -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- Estilos externos -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="logo-area">
+            <!-- Icono de escudo médico moderno -->
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12c0 1.268-.63 2.39-1.593 3.068a3.745 3.745 0 01-1.043 3.296 3.745 3.745 0 01-3.296 1.043A3.745 3.745 0 0112 21c-1.268 0-2.39-.63-3.068-1.593a3.746 3.746 0 01-3.296-1.043 3.745 3.745 0 01-1.043-3.296A3.745 3.745 0 013 12c0-1.268.63-2.39 1.593-3.068a3.745 3.745 0 011.043-3.296 3.746 3.746 0 013.296-1.043A3.746 3.746 0 0112 3c1.268 0 2.39.63 3.068 1.593a3.746 3.746 0 013.296 1.043 3.745 3.745 0 011.043 3.296A3.745 3.745 0 0121 12z" />
+            </svg>
+        </div>
+        <h1>Portal de Fórmulas EPS</h1>
+        <p class="subtitle">Consulte disponibilidad y obtenga su ruta óptima de reclamos</p>
+    </div>
+
+    <form id="webhookForm">
+        <div class="form-group">
+            <label for="cedula">Número de Cédula</label>
+            <input type="text" id="cedula" placeholder="Ej. 1053db829" required>
+            <div class="hint">Usado para validar sus autorizaciones activas en la EPS.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="ubicacion">Ubicación Actual</label>
+            <input type="text" id="ubicacion" placeholder="Ej. Barrio Palermo, Manizales" required>
+            <div class="hint">Permite calcular la sede más cercana o la ruta óptima de viaje.</div>
+        </div>
+
+        <div class="form-group">
+            <label for="medicamento">Medicamentos Solicitados</label>
+            <textarea id="medicamento" placeholder="Ej. Necesito reclamar el Losartán de 50mg de mi papá y Acetaminofén." required></textarea>
+            <div class="hint">Escriba de forma libre; la IA del sistema procesará su texto.</div>
+        </div>
+
+        <button type="submit" id="submitBtn">Enviar Consulta</button>
+    </form>
+
+    <div id="statusBox" class="status-box"></div>
+</div>
+
+<!-- Importamos la configuración -->
+<script src="config.js"></script>
+<script>
+    document.getElementById('webhookForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('submitBtn');
+        const statusBox = document.getElementById('statusBox');
+        
+        const cedula = document.getElementById('cedula').value;
+        const ubicacion = document.getElementById('ubicacion').value;
+        const medicamento = document.getElementById('medicamento').value;
+        
+        // Estado de carga inicial
+        submitBtn.disabled = true;
+        statusBox.className = 'status-box loading';
+        statusBox.innerHTML = '<span class="spinner"></span> Procesando con el pipeline de n8n...';
+        
+        // Payload estructurado para el trigger de n8n
+        const payload = {
+            cedula: cedula.trim(),
+            ubicacion: ubicacion.trim(),
+            mensaje_usuario: medicamento.trim(),
+            timestamp: new Date().toISOString()
+        };
+        
+        try {
+            // Verificación previa de la URL
+            if (!CONFIG || CONFIG.N8N_WEBHOOK_URL.includes('tu-ruta-aqui')) {
+                throw new Error('Por favor, edita el archivo config.js y agrega una URL válida de Webhook generada por n8n.');
+            }
+
+            const response = await fetch(CONFIG.N8N_WEBHOOK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+            
+            if (response.ok) {
+                const data = await response.json(); 
+                statusBox.className = 'status-box success';
+                
+                // Usar marked.js para convertir el Markdown de la IA a HTML perfecto
+                const respuestaFormato = marked.parse(data.respuesta_ia);
+                
+                // Inyectar el HTML limpio en la caja de estado
+                statusBox.innerHTML = `
+                    <div style="border-bottom: 1px solid #c8e6c9; padding-bottom: 10px; margin-bottom: 15px;">
+                        <strong>✓ Respuesta de la EPS</strong>
+                    </div>
+                    <div class="ia-response">
+                        ${respuestaFormato}
+                    </div>
+                `;
+            } else {
+                throw new Error(`El servidor respondió con código de estado ${response.status}`);
+            }
+            
+        } catch (error) {
+            statusBox.className = 'status-box error';
+            statusBox.innerHTML = `<strong>Error en la conexión:</strong> ${error.message}`;
+        } finally {
+            submitBtn.disabled = false;
+        }
+    });
+</script>
+
+</body>
+</html>

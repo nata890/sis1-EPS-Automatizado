@@ -20,7 +20,7 @@ Si estado es 'Reclamada', 'Vencida' o no existe, debes terminar la atención.`,
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ cedula: cedula }),
-                signal: AbortSignal.timeout(10000),
+                signal: AbortSignal.timeout(30000),
             });
 
             console.log(`📨 Respuesta n8n: ${response.status}`);
@@ -56,7 +56,7 @@ Si el arreglo está vacío o todo el stock es 0, significa desabastecimiento.`,
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ medicamento: medicamento }),
-                signal: AbortSignal.timeout(10000),
+                signal: AbortSignal.timeout(30000),
             });
 
             console.log(`📨 Respuesta n8n: ${response.status}`);

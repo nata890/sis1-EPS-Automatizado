@@ -88,9 +88,9 @@ app.post("/api/chat", async (req: Request, res: Response) => {
         } catch (invokeError: any) {
             console.error("❌ Error al invocar el agente:", invokeError.message);
             
-            // Si es un error de cuota (429), cambiar a mock
-            if (invokeError.message && invokeError.message.includes("429")) {
-                console.warn("⚠️ Cuota de API agotada, usando agente MOCK");
+            // Si es un error de cuota (429) de Groq, cambiar a mock
+            if (invokeError.message && (invokeError.message.includes("429") || invokeError.message.includes("rate_limit"))) {
+                console.warn("⚠️ Cuota de API Groq agotada, usando agente MOCK");
                 usandoMock = true;
                 agenteInstancia = await inicializarAgenteMock();
                 
@@ -139,8 +139,8 @@ app.listen(PORT, async () => {
         agenteInstancia = await inicializarAgente();
         console.log("🧠 Agente de LangGraph cargado con éxito.");
     } catch (error: any) {
-        if (error.message && error.message.includes("429")) {
-            console.warn("⚠️  Cuota de API agotada, usando agente MOCK");
+        if (error.message && (error.message.includes("429") || error.message.includes("rate_limit"))) {
+            console.warn("⚠️  Cuota de API Groq agotada, usando agente MOCK");
             usandoMock = true;
             agenteInstancia = await inicializarAgenteMock();
             console.log("🎭 Agente MOCK activado (desarrollo)");

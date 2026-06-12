@@ -1,4 +1,4 @@
-// Agente Mock para desarrollo sin usar la API de Google (mientras se agota la cuota)
+// Agente Mock para desarrollo sin usar la API de Groq (mientras se agota la cuota)
 // Esto simula respuestas del agente para que puedas probar la aplicación
 
 export const inicializarAgenteMock = async (): Promise<any> => {

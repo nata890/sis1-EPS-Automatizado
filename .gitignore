@@ -156,3 +156,21 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Agent
+.agent/
+.gemini/
+.opencode/
+.github/prompts
+.github/skills
+.opencode/skills
+.opencode/commands
+.gemini/skills
+.gemini/commands
+agent/
+gemini/
+opencode/
+github/
+claude/
+ollama/
+openspec/

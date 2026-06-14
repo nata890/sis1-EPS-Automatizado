@@ -1,4 +1,4 @@
-import { ChatGroq } from "@langchain/groq";
+import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
 import { createReactAgent } from "@langchain/langgraph/prebuilt";
 import {
     toolConsultarFormulas,
@@ -10,20 +10,20 @@ import * as dotenv from "dotenv";
 
 dotenv.config();
 
-let model: ChatGroq | null = null;
+let model: ChatGoogleGenerativeAI | null = null;
 
-function obtenerModelo(): ChatGroq {
+function obtenerModelo(): ChatGoogleGenerativeAI {
     if (!model) {
-        const apiKey = process.env.GROQ_API_KEY;
+        const apiKey = process.env.GEMINI_API_KEY;
 
         if (!apiKey) {
-            throw new Error("❌ GROQ_API_KEY no está configurada en las variables de entorno. Verifica tu archivo .env");
+            throw new Error("❌ GEMINI_API_KEY no está configurada en las variables de entorno. Verifica tu archivo .env");
         }
 
-        console.log(`🔑 Usando GROQ_API_KEY: ${apiKey.substring(0, 10)}...`);
+        console.log(`🔑 Usando GEMINI_API_KEY: ${apiKey.substring(0, 10)}...`);
 
-        model = new ChatGroq({
-            model: "llama-3.3-70b-versatile",
+        model = new ChatGoogleGenerativeAI({
+            model: "gemini-2.5-flash",
             temperature: 0.2,
             apiKey: apiKey,
             maxRetries: 2,
@@ -110,10 +110,12 @@ export const inicializarAgente = async (): Promise<any> => {
 
     try {
         const modeloInicializado = obtenerModelo();
-        console.log("✅ Modelo de Groq obtenido");
+        console.log("✅ Modelo de Gemini obtenido");
+
+        const modeloConHerramientas = modeloInicializado.bindTools(tools);
 
         const agent = createReactAgent({
-            llm: modeloInicializado,
+            llm: modeloConHerramientas,
             tools: tools,
             messageModifier: systemPrompt,
         });

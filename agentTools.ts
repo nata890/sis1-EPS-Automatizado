@@ -2,8 +2,8 @@ import { DynamicTool, DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import { calcularRutaOptimaAStar } from "./aStar";
 
-const URL_WEBHOOK_FORMULAS = "https://nataproyecto.app.n8n.cloud/webhook/consultar-formula";
-const URL_WEBHOOK_INVENTARIO = "https://nataproyecto.app.n8n.cloud/webhook/consultar-inventario";
+const URL_WEBHOOK_FORMULAS = "https://nataproyecto.app.n8n.cloud/webhook/consultar-formula-v2";
+const URL_WEBHOOK_INVENTARIO = "https://nataproyecto.app.n8n.cloud/webhook/consultar-inventario-v2";
 
 export const toolConsultarFormulas = new DynamicTool({
     name: "consultar_formulas_eps",

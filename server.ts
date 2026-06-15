@@ -28,12 +28,14 @@ let usandoMock = false;
 // Endpoint principal del Chat
 app.post("/api/chat", async (req: Request, res: Response) => {
     try {
-        const { mensaje } = req.body;
+        const { cedula, correo, ubicacionPaciente, medicamentos, mensaje } = req.body;
 
-        console.log("📨 Solicitud recibida:", { mensaje });
+        const mensajeConstruido = mensaje || `Hola, mi cédula es ${cedula}. Mi correo es ${correo}. Me encuentro en la ubicación: ${ubicacionPaciente}. Solicitud médica: ${medicamentos}`;
 
-        if (!mensaje) {
-             res.status(400).json({ error: "El mensaje del usuario es requerido." });
+        console.log("📨 Solicitud recibida:", { cedula, correo, ubicacionPaciente, medicamentos });
+
+        if (!mensajeConstruido) {
+             res.status(400).json({ error: "Los datos del usuario son requeridos." });
              return;
         }
 
@@ -44,7 +46,7 @@ app.post("/api/chat", async (req: Request, res: Response) => {
             console.log("✅ Agente inicializado");
         }
 
-        console.log(`🤖 Procesando mensaje: "${mensaje}"`);
+        console.log(`🤖 Procesando mensaje: "${mensajeConstruido}"`);
 
         try {
             // LangGraph espera el estado en este formato
@@ -52,7 +54,7 @@ app.post("/api/chat", async (req: Request, res: Response) => {
                 messages: [
                     {
                         role: "user",
-                        content: mensaje
+                        content: mensajeConstruido
                     }
                 ]
             };
@@ -98,7 +100,7 @@ app.post("/api/chat", async (req: Request, res: Response) => {
                 const input = {
                     messages: [{
                         role: "user",
-                        content: mensaje
+                        content: mensajeConstruido
                     }]
                 };
                 

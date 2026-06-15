@@ -85,13 +85,15 @@ const schemaSedeConStock = z.object({
 
 export const toolCalcularRutaOptima = new DynamicStructuredTool({
     name: "calcular_ruta_optima_a_star",
-    description: `Úsala CUANDO TENGAS MÚLTIPLES SEDES CON STOCK > 0. Determina la sede más cercana al paciente usando el algoritmo A* con distancia euclidiana como heurística. Devuelve la sede óptima, su distancia en km, y todas las sedes ordenadas por cercanía.`,
+    description: `Úsala CUANDO TENGAS MÚLTIPLES SEDES CON STOCK > 0. Recibe las coordenadas numéricas (latitud, longitud) del paciente y el arreglo de sedes con stock. Determina la sede más cercana usando el algoritmo A* con distancia euclidiana como heurística. Devuelve la sede óptima, su distancia en km, y todas las sedes ordenadas por cercanía. IMPORTANTE: NO recibes texto de ubicación aquí; primero debes llamar a 'obtener_coordenadas_barrio' para traducir la ubicación del paciente a coordenadas numéricas.`,
     schema: z.object({
-        ubicacionPaciente: z.string().describe("La dirección, barrio o referencia de ubicación del paciente (ej: 'Barrio Milán', 'Centro', 'Alta Suiza')"),
+        latitudPaciente: z.number().describe("Latitud numérica del paciente (obtenida previamente con 'obtener_coordenadas_barrio')"),
+        longitudPaciente: z.number().describe("Longitud numérica del paciente (obtenida previamente con 'obtener_coordenadas_barrio')"),
         sedesConStock: z.array(schemaSedeConStock).describe("Arreglo completo de sedes con stock, latitud y longitud que devolvió la herramienta consultar_inventario_sedes"),
     }),
     func: async (input: {
-        ubicacionPaciente: string;
+        latitudPaciente: number;
+        longitudPaciente: number;
         sedesConStock: {
             nombre_sede: string;
             direccion: string;
@@ -100,17 +102,17 @@ export const toolCalcularRutaOptima = new DynamicStructuredTool({
             stock: number;
         }[];
     }) => {
-        const { ubicacionPaciente, sedesConStock } = input;
+        const { latitudPaciente, longitudPaciente, sedesConStock } = input;
 
-        console.log(`📍 [NIVEL 3] Ejecutando A* para paciente en: "${ubicacionPaciente}"`);
+        console.log(`📍 [NIVEL 3] Ejecutando A* para coordenadas: (${latitudPaciente}, ${longitudPaciente})`);
         console.log(`🏪 Sedes recibidas para evaluación: ${sedesConStock.length}`);
 
-        const resultado = calcularRutaOptimaAStar(ubicacionPaciente, sedesConStock);
+        const resultado = calcularRutaOptimaAStar(latitudPaciente, longitudPaciente, sedesConStock);
 
         if (!resultado.sedeOptima) {
-            console.log(`⚠️ [NIVEL 3] No se encontraron sedes con stock disponible para "${ubicacionPaciente}"`);
+            console.log(`⚠️ [NIVEL 3] No se encontraron sedes con stock disponible para las coordenadas (${latitudPaciente}, ${longitudPaciente})`);
             return JSON.stringify({
-                mensaje: `No se encontraron sedes con stock disponible cerca de "${ubicacionPaciente}".`,
+                mensaje: `No se encontraron sedes con stock disponible cerca de las coordenadas proporcionadas.`,
                 todasLasSedes: [],
             });
         }
@@ -122,5 +124,93 @@ export const toolCalcularRutaOptima = new DynamicStructuredTool({
         });
 
         return JSON.stringify(resultado);
+    },
+});
+
+export const toolObtenerCoordenadasBarrio = new DynamicTool({
+    name: "obtener_coordenadas_barrio",
+    description: `Úsala SIEMPRE antes de llamar a 'calcular_ruta_optima_a_star' cuando el usuario mencione su ubicación en texto plano (ej: "Barrio Chipre", "Vivo en Milán", "Estación", "Centro"). Recibe el texto del barrio o ubicación y consulta la API de OpenStreetMap (Nominatim) para convertirla en coordenadas numéricas (latitud, longitud). Si no encuentra el lugar, retorna las coordenadas por defecto del Centro de Manizales (5.0674, -75.5064) para que el algoritmo A* nunca falle.`,
+    func: async (ubicacionTexto: string) => {
+        try {
+            console.log(`🌍 Geocodificando ubicación: "${ubicacionTexto}"`);
+            const textoLimpio = ubicacionTexto.replace(/\bbarrio\b\s*/i, "").trim();
+            const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(textoLimpio + ", Manizales, Colombia")}&format=json&limit=1`;
+            const response = await fetch(url, {
+                headers: {
+                    "User-Agent": "EPS-SistemaDisponibilidad/1.0 (contacto@epssanitas.com)",
+                },
+                signal: AbortSignal.timeout(10000),
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const data = await response.json() as { lat: string; lon: string }[];
+
+            if (data && data.length > 0) {
+                const lat = parseFloat(data[0].lat);
+                const lon = parseFloat(data[0].lon);
+                console.log(`✅ Coordenadas encontradas: (${lat}, ${lon}) para "${ubicacionTexto}"`);
+                return JSON.stringify({ latitud: lat, longitud: lon });
+            }
+
+            console.warn(`⚠️ Ubicación "${ubicacionTexto}" no encontrada en Nominatim, usando coordenadas por defecto (Centro de Manizales)`);
+            return JSON.stringify({ latitud: 5.0674, longitud: -75.5064 });
+        } catch (error: any) {
+            console.error(`❌ Error en geocodificación: ${error.message}`);
+            return JSON.stringify({ latitud: 5.0674, longitud: -75.5064 });
+        }
+    },
+});
+
+const URL_WEBHOOK_PENDIENTES = "https://nataproyecto.app.n8n.cloud/webhook/registrar-pendiente";
+
+export const toolRegistrarMedicamentoPendiente = new DynamicStructuredTool({
+    name: "registrar_medicamento_pendiente",
+    description: `Úsala SOLO cuando NO haya stock disponible en NINGUNA sede para el medicamento solicitado. Recibe cédula del paciente, su correo electrónico y el nombre del medicamento. Inserta un registro en la tabla 'pendientes_eps' con estado 'Pendiente' para notificar al paciente cuando haya disponibilidad.`,
+    schema: z.object({
+        cedula: z.string().describe("Número de cédula del paciente"),
+        correo: z.string().describe("Correo electrónico del paciente para notificación"),
+        medicamento: z.string().describe("Nombre del medicamento agotado (nombre_comercial o principio_activo)"),
+    }),
+    func: async (input: {
+        cedula: string;
+        correo: string;
+        medicamento: string;
+    }) => {
+        const { cedula, correo, medicamento } = input;
+
+        console.log(`📝 Registrando medicamento pendiente - Cédula: ${cedula}, Medicamento: ${medicamento}, Correo: ${correo}`);
+
+        try {
+            const response = await fetch(URL_WEBHOOK_PENDIENTES, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    cedula: cedula,
+                    correo: correo,
+                    medicamento: medicamento,
+                    estado: "Pendiente",
+                }),
+                signal: AbortSignal.timeout(30000),
+            });
+
+            console.log(`📨 Respuesta n8n pendientes: ${response.status}`);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                return `Error al registrar pendiente: servidor n8n respondió con estado ${response.status}. Detalles: ${errorText}`;
+            }
+
+            const data = await response.json();
+            console.log(`✅ Pendiente registrado exitosamente:`, data);
+            return JSON.stringify({
+                mensaje: `Registro exitoso. El paciente con cédula ${cedula} será notificado en ${correo} cuando el medicamento ${medicamento} esté disponible.`,
+                registro: data,
+            });
+        } catch (error: any) {
+            return `Error de conexión: ${error.message}. Verifica que n8n está activo en: ${URL_WEBHOOK_PENDIENTES}`;
+        }
     },
 });

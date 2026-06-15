@@ -86,6 +86,7 @@ label {
 }
 
 input[type="text"],
+input[type="email"],
 textarea {
     width: 100%;
     padding: 12px 16px;
@@ -98,6 +99,7 @@ textarea {
 }
 
 input[type="text"]:focus,
+input[type="email"]:focus,
 textarea:focus {
     outline: none;
     border-color: var(--primary);

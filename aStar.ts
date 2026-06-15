@@ -42,28 +42,17 @@ function distanciaEuclidiana(
 }
 
 export function calcularRutaOptimaAStar(
-    ubicacionPaciente: string,
+    latitudPaciente: number,
+    longitudPaciente: number,
     sedesConStock: SedeConStock[]
 ): ResultadoAStar {
-    const ubicacionNormalizada = ubicacionPaciente.toLowerCase().trim();
-    const coordsPaciente = COORDENADAS_MANIZALES[ubicacionNormalizada];
-
-    if (!coordsPaciente) {
-        console.warn(`⚠️ Ubicación "${ubicacionPaciente}" no reconocida, usando coordenadas por defecto (Centro)`);
-        return {
-            sedeOptima: null,
-            distanciaKm: 0,
-            todasLasSedes: [],
-        };
-    }
-
-    console.log(`📍 Paciente ubicado en: "${ubicacionPaciente}" (${coordsPaciente.lat}, ${coordsPaciente.lng})`);
+    console.log(`📍 Paciente ubicado en coordenadas: (${latitudPaciente}, ${longitudPaciente})`);
 
     const sedesConDistancia = sedesConStock
         .filter(s => s.stock > 0)
         .map(s => {
             const distanciaGrados = distanciaEuclidiana(
-                coordsPaciente.lat, coordsPaciente.lng,
+                latitudPaciente, longitudPaciente,
                 s.latitud, s.longitud
             );
             const distanciaKm = parseFloat((distanciaGrados * 111).toFixed(2));

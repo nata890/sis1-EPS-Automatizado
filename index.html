@@ -31,6 +31,12 @@
         </div>
 
         <div class="form-group">
+            <label for="correo">Correo Electrónico</label>
+            <input type="email" id="correo" placeholder="Ej. paciente@correo.com" required>
+            <div class="hint">Para notificarle cuando su medicamento esté disponible.</div>
+        </div>
+
+        <div class="form-group">
             <label for="ubicacion">Ubicación Actual</label>
             <input type="text" id="ubicacion" placeholder="Ej. Barrio Palermo, Manizales" required>
             <div class="hint">Permite calcular la sede más cercana o la ruta óptima de viaje.</div>
@@ -56,6 +62,7 @@
         const statusBox = document.getElementById('statusBox');
         
         const cedula = document.getElementById('cedula').value.trim();
+        const correo = document.getElementById('correo').value.trim();
         const ubicacion = document.getElementById('ubicacion').value.trim();
         const medicamento = document.getElementById('medicamento').value.trim();
         
@@ -64,12 +71,11 @@
         statusBox.className = 'status-box loading';
         statusBox.innerHTML = '<span class="spinner"></span> El Agente Inteligente está evaluando su caso...';
         
-        // CONCATENACIÓN INTELEGIBLE PARA EL AGENTE DE LANGCHAIN:
-        // Empaquetamos todo en una sola instrucción estructurada en lenguaje natural
-        const mensajeEstructurado = `Hola, mi cédula es ${cedula}. Me encuentro en la ubicación: ${ubicacion}. Solicitud médica: ${medicamento}`;
-        
         const payload = {
-            mensaje: mensajeEstructurado
+            cedula: cedula,
+            correo: correo,
+            ubicacionPaciente: ubicacion,
+            medicamentos: medicamento
         };
         
         try {

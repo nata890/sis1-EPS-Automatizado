@@ -15,6 +15,7 @@ app.use((req: Request, res: Response, next: any) => {
 // Middleware para que el servidor entienda formato JSON
 app.use(express.json());
 app.use(cors());
+app.use(express.static(__dirname));
 
 // Health check endpoint
 app.get("/health", (req: Request, res: Response) => {
@@ -133,8 +134,8 @@ app.post("/api/chat", async (req: Request, res: Response) => {
 
 // Levantar el servidor
 app.listen(PORT, async () => {
-    console.log(`🚀 Servidor de IA corriendo en: http://localhost:${PORT}`);
-    console.log(`📡 Esperando peticiones en POST http://localhost:${PORT}/api/chat`);
+    console.log(`💻 Interfaz web disponible en: http://localhost:${PORT}`);
+    console.log(`📡 API Chat disponible en: POST http://localhost:${PORT}/api/chat`);
     
     // Intentar inicializar el agente real
     try {

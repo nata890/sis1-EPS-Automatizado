@@ -1,0 +1,492 @@
+{
+  "name": "Inteligentes Flujo inicial",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "consultar-formula",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a9a2ada6-0dd2-42a5-b7e4-e5a1cb48dd72",
+      "name": "Webhook1",
+      "webhookId": "14b4639b-4c82-46c7-9f54-816375e353d2"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "consultar-inventario",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        176
+      ],
+      "id": "4eebfbc2-e5dc-43c1-b74d-a1ca7ac4f9ab",
+      "name": "Webhook2",
+      "webhookId": "326e7343-d338-426b-98e7-694074e008e0"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "vista_estado_formulas",
+          "mode": "list",
+          "cachedResultName": "vista_estado_formulas"
+        },
+        "where": {
+          "values": [
+            {
+              "column": "cedula_paciente",
+              "value": "={{ $json.body.cedula }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e90361cf-5dc3-4187-ab00-dbbb7a114eb3",
+      "name": "Select rows from a table",
+      "credentials": {
+        "postgres": {
+          "id": "aFv6iPWYYehnabdB",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        416,
+        0
+      ],
+      "id": "0a7c772f-cf38-4d7d-be21-bfda11aec43a",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "respondWith": "allIncomingItems",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        416,
+        176
+      ],
+      "id": "967d42a4-3580-4761-b2a2-d087110eeca3",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "operation": "select",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "vista_disponibilidad_medicamentos",
+          "mode": "list",
+          "cachedResultName": "vista_disponibilidad_medicamentos"
+        },
+        "where": {
+          "values": [
+            {
+              "column": "nombre_comercial",
+              "condition": "LIKE",
+              "value": "=%{{ $json.body.medicamento }}%"
+            },
+            {
+              "column": "principio_activo",
+              "condition": "LIKE",
+              "value": "=%{{ $json.body.medicamento }}%"
+            }
+          ]
+        },
+        "combineConditions": "OR",
+        "sort": {
+          "values": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        176
+      ],
+      "id": "e5bf9f60-1cf8-4c67-bbe3-b96e811065d5",
+      "name": "Select rows from a table2",
+      "credentials": {
+        "postgres": {
+          "id": "aFv6iPWYYehnabdB",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "registrar-pendiente",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        384
+      ],
+      "id": "3bca26e2-92f4-4080-9534-cd916680f7a3",
+      "name": "Webhook3",
+      "webhookId": "2742bcb3-5dd2-4d05-8d04-f472d5a522e3"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "pendientes_eps",
+          "mode": "list",
+          "cachedResultName": "pendientes_eps"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "cedula": "={{ $json.body.cedula }}",
+            "correo": "={{ $json.body.correo }}",
+            "medicamento": "={{ $json.body.medicamento }}",
+            "estado": "Pendiente "
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "cedula",
+              "displayName": "cedula",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "correo",
+              "displayName": "correo",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "medicamento",
+              "displayName": "medicamento",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_registro",
+              "displayName": "fecha_registro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        208,
+        384
+      ],
+      "id": "6efc6593-524a-4985-b786-01dda36cb56e",
+      "name": "Insert rows in a table",
+      "credentials": {
+        "postgres": {
+          "id": "aFv6iPWYYehnabdB",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        416,
+        384
+      ],
+      "id": "b4fcb41a-265a-4b3e-bb33-9943d72387af",
+      "name": "Respond to Webhook"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT \n    p.id AS id_pendiente, \n    p.correo, \n    p.cedula, \n    p.medicamento AS nombre_comercial\nFROM pendientes_eps p\nWHERE p.estado LIKE '%Pendiente%';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        224,
+        592
+      ],
+      "id": "e043816c-5a50-4c68-abf0-d88fa26e1e25",
+      "name": "Execute a SQL query",
+      "credentials": {
+        "postgres": {
+          "id": "aFv6iPWYYehnabdB",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.correo }}",
+        "subject": "¡Tu medicamento ya está disponible! - EPS Plan de Salud",
+        "message": "=<p>Estimado(a) Usuario(a),</p>\n\n<p>Nos complace informarle que el medicamento <strong>{{ $json.nombre_comercial }}</strong>, el cual tenía registrado en nuestra lista de pendientes, ya cuenta con existencias disponibles en los inventarios de nuestra EPS.</p>\n\n<p>Para conocer con precisión cuáles sedes tienen stock disponible en este momento y recibir la ruta óptima para reclamar su orden médica, lo invitamos a consultar nuestra plataforma virtual.</p>\n\n<p style=\"margin: 20px 0;\">\n  <a href=\"http://localhost:3000\" style=\"background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;\">\n    Consultar Sedes y Stock →\n  </a>\n</p>\n\n<p>Recuerde presentar su documento de identidad y la orden médica vigente al momento de acercarse a la farmacia.</p>\n\n<br>\n<p>Atentamente,</p>\n<p><strong>Sistema Automatizado de Alertas — EPS Plan de Salud</strong></p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        432,
+        592
+      ],
+      "id": "4c8823e0-e28e-473e-b978-271260d7fa60",
+      "name": "Send a message",
+      "webhookId": "90369be8-2d28-4b8d-99da-49b806c2cb6d",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "MIxMlOySzTv1vwEz",
+          "name": "Gmail OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 1
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        592
+      ],
+      "id": "e6cc43bd-7b8d-490f-9753-faa2a0fe8733",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE pendientes_eps \nSET estado = 'Notificado' \nWHERE id = {{ $node[\"Execute a SQL query\"].json.id_pendiente }};",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        640,
+        592
+      ],
+      "id": "dc6606af-8ea5-42a9-92cd-7c7da677b97d",
+      "name": "Execute a SQL query1",
+      "credentials": {
+        "postgres": {
+          "id": "aFv6iPWYYehnabdB",
+          "name": "Postgres account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook1": {
+      "main": [
+        [
+          {
+            "node": "Select rows from a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select rows from a table": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook2": {
+      "main": [
+        [
+          {
+            "node": "Select rows from a table2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select rows from a table2": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook3": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows in a table": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Execute a SQL query": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Execute a SQL query1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "89941727-0e66-4d0e-926e-3c8fd24784bf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "d22980132e8cda771a360d097046e5cd50893d5aa5cd44f7fbfe55ef43f468a5"
+  },
+  "nodeGroups": [],
+  "id": "RAacXKUDrOCO5WlS",
+  "tags": []
+}

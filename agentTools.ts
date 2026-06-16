@@ -2,8 +2,8 @@ import { DynamicTool, DynamicStructuredTool } from "@langchain/core/tools";
 import { z } from "zod";
 import { calcularRutaOptimaAStar } from "./aStar";
 
-const URL_WEBHOOK_FORMULAS = "https://nataproyecto.app.n8n.cloud/webhook/consultar-formula-v2";
-const URL_WEBHOOK_INVENTARIO = "https://nataproyecto.app.n8n.cloud/webhook/consultar-inventario-v2";
+const URL_WEBHOOK_FORMULAS = "https://sofiaespinosa1.app.n8n.cloud/webhook/consultar-formulaV1";
+const URL_WEBHOOK_INVENTARIO = "https://sofiaespinosa1.app.n8n.cloud/webhook/consultar-inventarioV1";
 
 export const toolConsultarFormulas = new DynamicTool({
     name: "consultar_formulas_eps",
@@ -164,7 +164,7 @@ export const toolObtenerCoordenadasBarrio = new DynamicTool({
     },
 });
 
-const URL_WEBHOOK_PENDIENTES = "https://nataproyecto.app.n8n.cloud/webhook/registrar-pendiente";
+const URL_WEBHOOK_PENDIENTES = "https://sofiaespinosa1.app.n8n.cloud/webhook/registrar-pendienteV1";
 
 export const toolRegistrarMedicamentoPendiente = new DynamicStructuredTool({
     name: "registrar_medicamento_pendiente",

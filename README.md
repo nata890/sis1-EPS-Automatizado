@@ -6,6 +6,118 @@ El sistema opera bajo una arquitectura de agente único sin memoria persistente:
 
 ---
 
+## Diagrama de Arquitectura
+
+```mermaid
+graph TB
+    subgraph Cliente["🖥️ Cliente / Frontend"]
+        HTML["index.html<br/>(Formulario Web)"]
+        Styles["styles.css"]
+    end
+
+    subgraph Backend["⚙️ Backend - Node.js + Express"]
+        Server["server.ts<br/>(Express Server)"]
+        Chat["POST /api/chat<br/>(Request Handler)"]
+    end
+
+    subgraph IA["🧠 Capa de Inteligencia Artificial"]
+        Agent["agent.ts<br/>(LangChain Agent)"]
+        LLM["Google Gemini<br/>2.5-Flash<br/>(LLM)"]
+        SystemPrompt["System Prompt<br/>(5 Pasos CoT)"]
+    end
+
+    subgraph Tools["🔧 Custom Tools / Herramientas"]
+        T1["📋 Validar Fórmula<br/>consultar_formulas_eps"]
+        T2["📦 Consultar Inventario<br/>consultar_inventario_sedes"]
+        T3["🗺️ Geocodificar<br/>obtener_coordenadas_barrio"]
+        T4["🛣️ Ruta A*<br/>calcular_ruta_optima_a_star"]
+        T5["📝 Registrar Pendiente<br/>registrar_medicamento_pendiente"]
+    end
+
+    subgraph Algoritmo["🤖 Algoritmo de Enrutamiento"]
+        AStar["aStar.ts<br/>(Algoritmo A*)<br/>Distancia Euclidiana"]
+    end
+
+    subgraph External["🌐 Integraciones Externas"]
+        N8n["n8n Webhooks<br/>(Middleware de Datos)"]
+        DB["PostgreSQL<br/>(Tablas EPS)"]
+        OSM["OpenStreetMap<br/>Nominatim API<br/>(Geocodificación)"]
+    end
+
+    subgraph Config["⚙️ Configuración"]
+        Env[".env<br/>(API Keys)"]
+        Package["package.json<br/>(Dependencias)"]
+        TsConfig["tsconfig.json<br/>(TypeScript)"]
+    end
+
+    %% Flujo de Conexión
+    HTML -->|Envía: cedula,correo,ubicación,medicamentos| Chat
+    Chat -->|Inicializa| Agent
+    Agent -->|Carga credenciales| Env
+    Agent -->|Consulta modelo| LLM
+    LLM -->|Sigue directrices| SystemPrompt
+    
+    LLM -->|Tool Call 1| T1
+    T1 -->|HTTP POST| N8n
+    N8n -->|Query| DB
+    
+    LLM -->|Tool Call 2| T2
+    T2 -->|HTTP POST| N8n
+    N8n -->|Query| DB
+    
+    LLM -->|Tool Call 3| T3
+    T3 -->|HTTP GET| OSM
+    OSM -->|Retorna coords| T3
+    
+    LLM -->|Tool Call 4| T4
+    T4 -->|Ejecuta| AStar
+    AStar -->|Calcula distancias| T4
+    
+    LLM -->|Tool Call 5 - opcional| T5
+    T5 -->|HTTP POST| N8n
+    N8n -->|Insert| DB
+    
+    Agent -->|Respuesta formateada| Chat
+    Chat -->|Retorna JSON| HTML
+    HTML -->|Renderiza| Cliente
+
+    %% Estilos
+    classDef frontend fill:#e1f5ff,stroke:#01579b,stroke-width:2px,color:black
+    classDef backend fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:black
+    classDef ia fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:black
+    classDef tools fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px,color:black
+    classDef algo fill:#fce4ec,stroke:#880e4f,stroke-width:2px,color:black
+    classDef external fill:#ede7f6,stroke:#311b92,stroke-width:2px,color:black
+    classDef config fill:#f1f8e9,stroke:#33691e,stroke-width:2px,color:black
+
+    class HTML,Styles frontend
+    class Server,Chat backend
+    class Agent,LLM,SystemPrompt ia
+    class T1,T2,T3,T4,T5 tools
+    class AStar algo
+    class N8n,DB,OSM external
+    class Env,Package,TsConfig config
+```
+
+### Descripción del Diagrama de Arquitectura
+
+**Flujo de datos:**
+
+1. **Frontend → Backend:** El usuario completa el formulario web (cédula, correo, ubicación, medicamentos) y envía una solicitud POST a `/api/chat`.
+
+2. **Backend → Agente IA:** El servidor Express inicializa la instancia del agente LangChain, cargas las credenciales desde `.env` y carga el `SystemPrompt` con las directrices de cinco pasos.
+
+3. **Agente ↔ LLM:** El agente delega la decisión al modelo Gemini, que evalúa el contexto y determina qué herramienta invocar según el paso del flujo.
+
+4. **Herramientas → Datos:**
+   - **T1, T2, T5** conectan con n8n (middleware), que a su vez consulta PostgreSQL.
+   - **T3** se comunica directamente con la API pública de OpenStreetMap (Nominatim).
+   - **T4** ejecuta el algoritmo A* localmente en `aStar.ts` sin hacer llamadas externas.
+
+5. **Respuesta → Frontend:** El agente formatea la respuesta según restricciones léxicas y la retorna al cliente como JSON, que se renderiza en la interfaz web.
+
+---
+
 ## Arquitectura Cognitiva y Componentes
 
 ### 1. Modelo de Lenguaje (LLM)
@@ -98,6 +210,64 @@ El system prompt fuerza al modelo a recorrer los cinco pasos secuencialmente, pe
 
 Además, el prompt incluye una **regla de corrección semántica** en el paso 2: si el paciente menciona un nombre comercial (p. ej., *Dolex*, *Geniol*), el modelo debe traducirlo a su principio activo (*Acetaminofén*, *Paracetamol*) antes de invocar la herramienta de inventario, y reintentar si la primera llamada devuelve vacío.
 
+### Diagrama de Flujo — 5 Pasos CoT con Bifurcaciones
+
+```mermaid
+graph TD
+    Start(["🟢 Inicio: Solicitud del Paciente<br/>(cédula, correo, ubicación, medicamento)"])
+    
+    Paso1["<b>PASO 1: Validación EPS</b><br/>Tool: consultar_formulas_eps<br/>─────────────<br/>¿Existe fórmula activa para esta cédula?"]
+    
+    Decision1{{"¿Estado = 'Activa'?"}}
+    
+    Termino1["🔴 Fin: Fórmula NO válida<br/>Respuesta: Explicar motivo<br/>(Reclamada, Vencida, etc.)"]
+    
+    Paso2["<b>PASO 2: Consultar Inventario</b><br/>Tool: consultar_inventario_sedes<br/>─────────────<br/>¿Hay stock en alguna sede?"]
+    
+    Decision2{{"¿Stock Total > 0?"}}
+    
+    Termino2["🔴 Fin: Desabastecimiento<br/>Tool: registrar_medicamento_pendiente<br/>Respuesta: Medicamento no disponible<br/>(Se registró para notificación)"]
+    
+    Paso3["<b>PASO 3: Geocodificar Ubicación</b><br/>Tool: obtener_coordenadas_barrio<br/>─────────────<br/>Convertir barrio/ubicación a (lat, lng)"]
+    
+    Paso4["<b>PASO 4: Calcular Ruta Óptima A*</b><br/>Tool: calcular_ruta_optima_a_star<br/>Algoritmo: aStar.ts (Distancia Euclidiana)<br/>─────────────<br/>Encontrar la sede más cercana"]
+    
+    Paso5["<b>PASO 5: Formatear Respuesta</b><br/>─────────────<br/>• Nombre de sede<br/>• Dirección completa<br/>• Distancia en km<br/>• Stock disponible<br/>• Restricciones léxicas (sin términos prohibidos)"]
+    
+    Success["🟢 Fin Exitoso: Respuesta enviada al paciente<br/>con sede óptima y distancia calculada"]
+    
+    Start --> Paso1
+    Paso1 --> Decision1
+    Decision1 -->|NO| Termino1
+    Decision1 -->|SÍ| Paso2
+    
+    Paso2 --> Decision2
+    Decision2 -->|NO| Termino2
+    Decision2 -->|SÍ| Paso3
+    
+    Paso3 --> Paso4
+    Paso4 --> Paso5
+    Paso5 --> Success
+    
+    Termino1 --> Final["Cierre de sesión"]
+    Termino2 --> Final
+    Success --> Final
+    
+    classDef step fill:#e1f5ff,stroke:#01579b,stroke-width:2px,color:black
+    classDef decision fill:#fff9c4,stroke:#f57f17,stroke-width:2px,color:black
+    classDef success fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px,color:black
+    classDef error fill:#ffcdd2,stroke:#c62828,stroke-width:2px,color:black
+    classDef start fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:black
+    
+    class Paso1,Paso2,Paso3,Paso4,Paso5 step
+    class Decision1,Decision2 decision
+    class Success success
+    class Termino1,Termino2 error
+    class Start,Final start
+```
+
+---
+
 ### Estrategia de Persistencia, Memoria y Justificación de RAG
 
 | Concepto | Implementación en el Sistema | Justificación Arquitectónica |
@@ -124,6 +294,86 @@ Además, el prompt incluye una **regla de corrección semántica** en el paso 2:
 ### Sinergia entre niveles
 
 n8n actúa como **middleware de datos** (puente entre el agente y PostgreSQL), mientras que LangChain + LangGraph proporcionan la **capa de razonamiento**. No son excluyentes: el Nivel 2 consume los webhooks expuestos por el Nivel 1, creando una arquitectura en dos capas donde cada una resuelve el problema en su abstracción óptima.
+
+---
+
+## Estructura del Proyecto — Dependencias de Módulos
+
+```mermaid
+graph LR
+    subgraph SourceFiles["📂 Archivos Fuente"]
+        Config["config.js<br/>(URLs n8n)"]
+        Agent["agent.ts<br/>(Inicialización)"]
+        Tools["agentTools.ts<br/>(5 Tools)"]
+        AStar["aStar.ts<br/>(Algoritmo)"]
+        Server["server.ts<br/>(Express)"]
+        HTML["index.html<br/>(Frontend)"]
+        CSS["styles.css<br/>(Estilos)"]
+    end
+
+    subgraph LangChainLibs["📚 LangChain + Core"]
+        ChatGemini["@langchain/google-genai<br/>(ChatGoogleGenerativeAI)"]
+        CoreTools["@langchain/core<br/>(DynamicTool, DynamicStructuredTool)"]
+        Zod["zod<br/>(Schema Validation)"]
+        LangChainMain["langchain<br/>(createAgent)"]
+        LangGraph["@langchain/langgraph<br/>(Graph Runtime)"]
+    end
+
+    subgraph FrameworkLibs["🔧 Middleware + Runtime"]
+        Express["express<br/>(HTTP Server)"]
+        CORS["cors<br/>(Cross-Origin)"]
+        DotEnv["dotenv<br/>(.env Loader)"]
+        TSNode["ts-node<br/>(TypeScript Executor)"]
+        TypeScript["typescript<br/>(Compiler)"]
+    end
+
+    subgraph ExternalAPIs["🌐 APIs Externas"]
+        N8nWebhook["N8n Webhooks<br/>(PostgreSQL Bridge)"]
+        OpenStreetMap["OpenStreetMap Nominatim<br/>(Geocodificación)"]
+    end
+
+    %% Relaciones de dependencia
+    Server -->|importa| Agent
+    Server -->|usa| Express
+    Server -->|usa| CORS
+    
+    Agent -->|importa| Tools
+    Agent -->|usa| ChatGemini
+    Agent -->|usa| LangChainMain
+    
+    Tools -->|importa| AStar
+    Tools -->|usa| CoreTools
+    Tools -->|usa| Zod
+    Tools -->|llama webhooks| N8nWebhook
+    Tools -->|llama API| OpenStreetMap
+    
+    Agent -->|carga| Config
+    Agent -->|carga| DotEnv
+    
+    AStar -->|calcula rutas| Tools
+    
+    Server -->|sirve| HTML
+    Server -->|sirve| CSS
+    
+    ChatGemini -->|compilada en| LangGraph
+    LangChainMain -->|utiliza| LangGraph
+    
+    TypeScript -->|compila| Agent
+    TypeScript -->|compila| Server
+    TypeScript -->|compila| Tools
+    
+    TSNode -->|ejecuta| Server
+
+    classDef source fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:black
+    classDef langchain fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:black
+    classDef framework fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:black
+    classDef external fill:#ede7f6,stroke:#5e35b1,stroke-width:2px,color:black
+
+    class Config,Agent,Tools,AStar,Server,HTML,CSS source
+    class ChatGemini,CoreTools,Zod,LangChainMain,LangGraph langchain
+    class Express,CORS,DotEnv,TSNode,TypeScript framework
+    class N8nWebhook,OpenStreetMap external
+```
 
 ---
 
@@ -192,6 +442,14 @@ npm run build
 | `typescript`                   | ^6.0.3    | Tipado estático y compilación                          |
 
 ---
+
+## Declaración de Integridad Académica y Uso de IA
+
+En cumplimiento con los lineamientos del Proyecto, se declara el uso de asistentes de Inteligencia Artificial Generativa (Gemini) bajo el siguiente alcance:
+* **Asistencia en código:** Refinamiento de la lógica de enrutamiento A* y estructuración de los esquemas de validación Zod.
+* **Documentación y síntesis:** Apoyo en la redacción técnica, generación de gráficos mediante scripts de Python (NetworkX/Matplotlib) y estructuración del presente README.
+* Todos los componentes generados fueron analizados, comprendidos y adaptados a la arquitectura específica del ecosistema LangChain y n8n diseñado para este proyecto.
+
 
 ## Licencia
 

@@ -302,7 +302,6 @@ n8n actúa como **middleware de datos** (puente entre el agente y PostgreSQL), m
 ```mermaid
 graph LR
     subgraph SourceFiles["📂 Archivos Fuente"]
-        Config["config.js<br/>(URLs n8n)"]
         Agent["agent.ts<br/>(Inicialización)"]
         Tools["agentTools.ts<br/>(5 Tools)"]
         AStar["aStar.ts<br/>(Algoritmo)"]
@@ -347,7 +346,6 @@ graph LR
     Tools -->|llama webhooks| N8nWebhook
     Tools -->|llama API| OpenStreetMap
     
-    Agent -->|carga| Config
     Agent -->|carga| DotEnv
     
     AStar -->|calcula rutas| Tools
@@ -369,7 +367,7 @@ graph LR
     classDef framework fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:black
     classDef external fill:#ede7f6,stroke:#5e35b1,stroke-width:2px,color:black
 
-    class Config,Agent,Tools,AStar,Server,HTML,CSS source
+    class Agent,Tools,AStar,Server,HTML,CSS source
     class ChatGemini,CoreTools,Zod,LangChainMain,LangGraph langchain
     class Express,CORS,DotEnv,TSNode,TypeScript framework
     class N8nWebhook,OpenStreetMap external

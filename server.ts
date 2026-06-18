@@ -36,11 +36,11 @@ app.post("/api/chat", async (req: Request, res: Response) => {
         console.log("📨 Solicitud recibida:", { cedula, correo, ubicacionPaciente, medicamentos });
 
         if (!mensajeConstruido) {
-             res.status(400).json({ error: "Los datos del usuario son requeridos." });
-             return;
+            res.status(400).json({ error: "Los datos del usuario son requeridos." });
+            return;
         }
 
-        // Aseguramos que el agente esté inicializado antes de llamarlo
+        //  el agente esté inicializado antes de llamarlo
         if (!agenteInstancia) {
             console.log("⏳ Inicializando agente...");
             agenteInstancia = await inicializarAgente();
@@ -61,7 +61,7 @@ app.post("/api/chat", async (req: Request, res: Response) => {
             };
 
             console.log("📤 Enviando input al agente:", input);
-            
+
             const resultado = await agenteInstancia.invoke(input);
 
             console.log("✅ Resultado del agente recibido");
@@ -69,7 +69,7 @@ app.post("/api/chat", async (req: Request, res: Response) => {
 
             // Intentar extraer la respuesta de diferentes formatos posibles
             let respuestaFinalIA = "";
-            
+
             if (resultado.messages && Array.isArray(resultado.messages) && resultado.messages.length > 0) {
                 const ultimoMensaje = resultado.messages[resultado.messages.length - 1];
                 respuestaFinalIA = ultimoMensaje?.content || ultimoMensaje || "";
@@ -90,13 +90,13 @@ app.post("/api/chat", async (req: Request, res: Response) => {
 
         } catch (invokeError: any) {
             console.error("❌ Error al invocar el agente:", invokeError.message);
-            
+
             // Si es un error de cuota (429) de Groq, cambiar a mock
             if (invokeError.message && (invokeError.message.includes("429") || invokeError.message.includes("rate_limit"))) {
                 console.warn("⚠️ Cuota de API Groq agotada, usando agente MOCK");
                 usandoMock = true;
                 agenteInstancia = await inicializarAgenteMock();
-                
+
                 // Reintentar con el mock
                 const input = {
                     messages: [{
@@ -104,30 +104,30 @@ app.post("/api/chat", async (req: Request, res: Response) => {
                         content: mensajeConstruido
                     }]
                 };
-                
+
                 const resultadoMock = await agenteInstancia.invoke(input);
                 let respuestaFinal = "";
-                
+
                 if (resultadoMock.messages && Array.isArray(resultadoMock.messages) && resultadoMock.messages.length > 0) {
                     respuestaFinal = resultadoMock.messages[resultadoMock.messages.length - 1]?.content || "";
                 }
-                
-                res.json({ 
+
+                res.json({
                     respuesta_ia: respuestaFinal,
                     modo: "🎭 MODO MOCK (cuota agotada)"
                 });
                 return;
             }
-            
+
             throw invokeError;
         }
 
     } catch (error: any) {
         console.error("❌ Error en el endpoint /api/chat:", error.message);
         console.error("📋 Stack completo:", error.stack);
-        res.status(500).json({ 
+        res.status(500).json({
             error: "Hubo un error interno en el servidor de IA.",
-            detalles: error.message 
+            detalles: error.message
         });
     }
 });
@@ -136,7 +136,7 @@ app.post("/api/chat", async (req: Request, res: Response) => {
 app.listen(PORT, async () => {
     console.log(`💻 Interfaz web disponible en: http://localhost:${PORT}`);
     console.log(`📡 API Chat disponible en: POST http://localhost:${PORT}/api/chat`);
-    
+
     // Intentar inicializar el agente real
     try {
         agenteInstancia = await inicializarAgente();

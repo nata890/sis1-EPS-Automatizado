@@ -1,5 +1,5 @@
 import { ChatGoogleGenerativeAI } from "@langchain/google-genai";
-import { createReactAgent } from "@langchain/langgraph/prebuilt";
+import { createAgent } from "langchain";
 import {
     toolConsultarFormulas,
     toolConsultarInventario,
@@ -7,7 +7,6 @@ import {
     toolRegistrarMedicamentoPendiente,
     toolObtenerCoordenadasBarrio,
 } from "./agentTools";
-import { HumanMessage } from "@langchain/core/messages";
 import * as dotenv from "dotenv";
 
 dotenv.config();
@@ -137,12 +136,10 @@ export const inicializarAgente = async (): Promise<any> => {
         const modeloInicializado = obtenerModelo();
         console.log("✅ Modelo de Gemini obtenido");
 
-        const modeloConHerramientas = modeloInicializado.bindTools(tools);
-
-        const agent = createReactAgent({
-            llm: modeloConHerramientas,
+        const agent = createAgent({
+            model: modeloInicializado,
             tools: tools,
-            messageModifier: systemPrompt,
+            systemPrompt: systemPrompt,
         });
 
         console.log("✅ Agente React creado exitosamente");

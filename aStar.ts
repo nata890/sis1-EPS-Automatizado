@@ -13,25 +13,6 @@ interface ResultadoAStar {
     todasLasSedes: (SedeConStock & { distanciaKm: number })[];
 }
 
-const COORDENADAS_MANIZALES: Record<string, { lat: number; lng: number }> = {
-    "barrio milán": { lat: 5.058, lng: -75.485 },
-    "milán": { lat: 5.058, lng: -75.485 },
-    "barrio alta suiza": { lat: 5.062, lng: -75.492 },
-    "alta suiza": { lat: 5.062, lng: -75.492 },
-    "sede alta suiza": { lat: 5.062, lng: -75.492 },
-    "centro": { lat: 5.068, lng: -75.517 },
-    "sede centro": { lat: 5.068, lng: -75.517 },
-    "barrio centro": { lat: 5.068, lng: -75.517 },
-    "barrio palermo": { lat: 5.055, lng: -75.490 },
-    "palermo": { lat: 5.055, lng: -75.490 },
-    "chipichape": { lat: 5.072, lng: -75.510 },
-    "centro comercial chipichape": { lat: 5.072, lng: -75.510 },
-    "estación": { lat: 5.060, lng: -75.480 },
-    "la estación": { lat: 5.060, lng: -75.480 },
-    "sancancio": { lat: 5.070, lng: -75.500 },
-    "san cancio": { lat: 5.070, lng: -75.500 },
-};
-
 function distanciaEuclidiana(
     lat1: number, lng1: number,
     lat2: number, lng2: number

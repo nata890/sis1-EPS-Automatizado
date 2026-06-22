@@ -85,7 +85,10 @@ const schemaSedeConStock = z.object({
 
 export const toolCalcularRutaOptima = new DynamicStructuredTool({
     name: "calcular_ruta_optima_a_star",
-    description: `Úsala CUANDO TENGAS MÚLTIPLES SEDES CON STOCK > 0. Recibe las coordenadas numéricas (latitud, longitud) del paciente y el arreglo de sedes con stock. Determina la sede más cercana usando el algoritmo A* con distancia euclidiana como heurística. Devuelve la sede óptima, su distancia en km, y todas las sedes ordenadas por cercanía. IMPORTANTE: NO recibes texto de ubicación aquí; primero debes llamar a 'obtener_coordenadas_barrio' para traducir la ubicación del paciente a coordenadas numéricas.`,
+    description: `Úsala CUANDO TENGAS MÚLTIPLES SEDES CON STOCK > 0. Recibe las coordenadas numéricas (latitud, longitud) del paciente y el arreglo de sedes con stock.
+    Determina la sede más cercana usando el algoritmo A* con distancia euclidiana como heurística. 
+    Devuelve la sede óptima, su distancia en km, y todas las sedes ordenadas por cercanía. 
+    IMPORTANTE: NO recibes texto de ubicación aquí; primero debes llamar a 'obtener_coordenadas_barrio' para traducir la ubicación del paciente a coordenadas numéricas.`,
     schema: z.object({
         latitudPaciente: z.number().describe("Latitud numérica del paciente (obtenida previamente con 'obtener_coordenadas_barrio')"),
         longitudPaciente: z.number().describe("Longitud numérica del paciente (obtenida previamente con 'obtener_coordenadas_barrio')"),
@@ -129,7 +132,10 @@ export const toolCalcularRutaOptima = new DynamicStructuredTool({
 
 export const toolObtenerCoordenadasBarrio = new DynamicTool({
     name: "obtener_coordenadas_barrio",
-    description: `Úsala SIEMPRE antes de llamar a 'calcular_ruta_optima_a_star' cuando el usuario mencione su ubicación en texto plano (ej: "Barrio Chipre", "Vivo en Milán", "Estación", "Centro"). Recibe el texto del barrio o ubicación y consulta la API de OpenStreetMap (Nominatim) para convertirla en coordenadas numéricas (latitud, longitud). Si no encuentra el lugar, retorna las coordenadas por defecto del Centro de Manizales (5.0674, -75.5064) para que el algoritmo A* nunca falle.`,
+    description: `Úsala SIEMPRE antes de llamar a 'calcular_ruta_optima_a_star' cuando el usuario mencione su ubicación en texto plano 
+    (ej: "Barrio Chipre", "Vivo en Milán", "Estación", "Centro").
+     Recibe el texto del barrio o ubicación y consulta la API de OpenStreetMap (Nominatim) para convertirla en coordenadas numéricas 
+     (latitud, longitud). Si no encuentra el lugar, retorna las coordenadas por defecto del Centro de Manizales (5.0674, -75.5064) para que el algoritmo A* nunca falle.`,
     func: async (ubicacionTexto: string) => {
         try {
             console.log(`🌍 Geocodificando ubicación: "${ubicacionTexto}"`);
@@ -168,7 +174,9 @@ const URL_WEBHOOK_PENDIENTES = "https://sofiajaramillo1.app.n8n.cloud/webhook/re
 
 export const toolRegistrarMedicamentoPendiente = new DynamicStructuredTool({
     name: "registrar_medicamento_pendiente",
-    description: `Úsala SOLO cuando NO haya stock disponible en NINGUNA sede para el medicamento solicitado. Recibe cédula del paciente, su correo electrónico y el nombre del medicamento. Inserta un registro en la tabla 'pendientes_eps' con estado 'Pendiente' para notificar al paciente cuando haya disponibilidad.`,
+    description: `Úsala SOLO cuando NO haya stock disponible en NINGUNA sede para el medicamento solicitado. 
+    Recibe cédula del paciente, su correo electrónico y el nombre del medicamento. Inserta un registro en la tabla 'pendientes_eps' 
+    con estado 'Pendiente' para notificar al paciente cuando haya disponibilidad.`,
     schema: z.object({
         cedula: z.string().describe("Número de cédula del paciente"),
         correo: z.string().describe("Correo electrónico del paciente para notificación"),
